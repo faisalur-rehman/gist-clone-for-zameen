@@ -1,23 +1,57 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import RepoDetails from "./components/RepoDetails";
+import "./App.css";
+import { fetchData, fetchForksUrl } from "./services/fetchData";
 
 function App() {
+  const [gists, setGists] = useState([]);
+  const [name, setName] = useState("");
+  const [forksUrl, setForksUrl] = useState([]);
+  const [forkUsers, setForkUsers] = useState([]);
+  const handleChange = ({ target }) => {
+    setName(target.value);
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const gists = await fetchData(name);
+    gists && setGists(gists);
+
+    gists &&
+      gists.map((gist) => setForksUrl((prev) => [...prev, gist.forks_url]));
+    if (gists) {
+      for (let i = 0; i < gists.length; i++) {
+        const { language, repoId, userData } = await fetchForksUrl(
+          forksUrl[i],
+          i,
+          gists
+        );
+        setForkUsers((prev) => [
+          ...prev,
+          {
+            repoId,
+            userData,
+            language,
+          },
+        ]);
+      }
+    }
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <form onSubmit={handleSubmit} className="form">
+        <label htmlFor="repositiry">Search</label>
+        <input
+          type="text"
+          id="repository"
+          value={name}
+          onChange={handleChange}
+          placeholder="eg: faisalur-rehman"
+        />
+      </form>
+      <table className="file-list">
+        {forkUsers && <RepoDetails forkUsers={forkUsers} />}
+      </table>
     </div>
   );
 }
